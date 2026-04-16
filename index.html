@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro de cigarros</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0e0c0a;
+      --surface: #161310;
+      --card: #1d1915;
+      --border: #2e2820;
+      --amber: #c98a3a;
+      --amber-dim: #7a5422;
+      --amber-glow: rgba(201, 138, 58, 0.12);
+      --text: #e8ddd0;
+      --text-dim: #8a7d6e;
+      --text-faint: #4a4035;
+      --smoke: #b8a898;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Grain texture */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.6;
+    }
+
+    /* Ambient glow */
+    body::after {
+      content: '';
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(201, 138, 58, 0.06) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 520px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    .header {
+      margin-bottom: 3rem;
+      text-align: center;
+    }
+
+    .header-eyebrow {
+      font-size: 0.65rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-bottom: 0.75rem;
+    }
+
+    .header-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.2rem;
+      font-weight: 400;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .header-title em {
+      font-style: italic;
+      color: var(--smoke);
+    }
+
+    .header-line {
+      width: 40px;
+      height: 1px;
+      background: var(--amber-dim);
+      margin: 1.25rem auto 0;
+    }
+
+    /* Card */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 2.5rem;
+      position: relative;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--amber-dim), transparent);
+    }
+
+    /* Step indicator */
+    .step-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .step-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-faint);
+      transition: all 0.3s ease;
+    }
+
+    .step-dot.active {
+      background: var(--amber);
+      box-shadow: 0 0 8px var(--amber);
+    }
+
+    .step-dot.done {
+      background: var(--amber-dim);
+    }
+
+    .step-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-left: auto;
+    }
+
+    /* Question */
+    .question {
+      margin-bottom: 1.5rem;
+    }
+
+    .question-label {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      font-weight: 400;
+      color: var(--text);
+      margin-bottom: 1rem;
+      line-height: 1.4;
+    }
+
+    .question-label em {
+      color: var(--smoke);
+      font-style: italic;
+    }
+
+    /* Input */
+    .input-wrap {
+      position: relative;
+    }
+
+    input[type="text"],
+    input[type="time"],
+    textarea {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 1rem;
+      padding: 0.85rem 1rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none;
+    }
+
+    input[type="time"] {
+      cursor: pointer;
+      color-scheme: dark;
+    }
+
+    textarea {
+      resize: none;
+      height: 100px;
+      line-height: 1.6;
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: var(--amber-dim);
+      box-shadow: 0 0 0 3px var(--amber-glow);
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: var(--text-faint);
+    }
+
+    /* Button */
+    .btn {
+      width: 100%;
+      padding: 0.9rem 1.5rem;
+      background: transparent;
+      border: 1px solid var(--amber-dim);
+      border-radius: 2px;
+      color: var(--amber);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.85rem;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      margin-top: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--amber-glow);
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    .btn:hover::before {
+      opacity: 1;
+    }
+
+    .btn:hover {
+      border-color: var(--amber);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn-primary {
+      background: var(--amber-glow);
+      border-color: var(--amber);
+    }
+
+    /* Thank you screen */
+    .thanks-screen {
+      text-align: center;
+      padding: 1rem 0;
+    }
+
+    .thanks-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1.5rem;
+      display: block;
+    }
+
+    .thanks-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      font-weight: 400;
+      color: var(--text);
+      margin-bottom: 0.75rem;
+    }
+
+    .thanks-sub {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      line-height: 1.7;
+      margin-bottom: 2rem;
+    }
+
+    .thanks-summary {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 1.25rem;
+      text-align: left;
+      margin-bottom: 1.5rem;
+    }
+
+    .summary-row {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 0.6rem;
+      font-size: 0.75rem;
+      line-height: 1.5;
+    }
+
+    .summary-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .summary-key {
+      color: var(--text-faint);
+      min-width: 80px;
+      flex-shrink: 0;
+      letter-spacing: 0.05em;
+    }
+
+    .summary-val {
+      color: var(--smoke);
+    }
+
+    /* History panel */
+    .history-toggle {
+      width: 100%;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      padding: 1rem 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: color 0.2s;
+    }
+
+    .history-toggle:hover {
+      color: var(--amber);
+    }
+
+    .history-panel {
+      margin-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1.5rem;
+      display: none;
+    }
+
+    .history-panel.open {
+      display: block;
+    }
+
+    .history-user {
+      margin-bottom: 1.5rem;
+    }
+
+    .history-user-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.9rem;
+      color: var(--amber);
+      margin-bottom: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+
+    .history-entry {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 0.9rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.7rem;
+    }
+
+    .history-time {
+      color: var(--amber-dim);
+      margin-bottom: 0.35rem;
+      font-weight: 400;
+    }
+
+    .history-text {
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    .no-history {
+      font-size: 0.7rem;
+      color: var(--text-faint);
+      text-align: center;
+      padding: 0.5rem 0;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 2rem;
+      text-align: center;
+      font-size: 0.6rem;
+      color: var(--text-faint);
+      letter-spacing: 0.1em;
+    }
+
+    /* Animations */
+    .fade-in {
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+
+  <div class="container">
+    <div class="header">
+      <div class="header-eyebrow">Diario de consumo</div>
+      <h1 class="header-title">Registro<br><em>de cigarros</em></h1>
+      <div class="header-line"></div>
+    </div>
+
+    <div class="card" id="main-card">
+
+      <!-- Step 1: Nombre -->
+      <div id="step-name" class="fade-in">
+        <div class="step-indicator">
+          <div class="step-dot active"></div>
+          <div class="step-dot"></div>
+          <div class="step-dot"></div>
+          <div class="step-dot"></div>
+          <span class="step-label">1 / 4</span>
+        </div>
+        <div class="question">
+          <div class="question-label">¿Cómo te llamas?</div>
+          <div class="input-wrap">
+            <input type="text" id="input-name" placeholder="Nombre completo" autocomplete="off" />
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="goStep2()">Continuar →</button>
+      </div>
+
+      <!-- Step 2: Hora -->
+      <div id="step-time" class="hidden fade-in">
+        <div class="step-indicator">
+          <div class="step-dot done"></div>
+          <div class="step-dot active"></div>
+          <div class="step-dot"></div>
+          <div class="step-dot"></div>
+          <span class="step-label">2 / 4</span>
+        </div>
+        <div class="question">
+          <div class="question-label">¿A qué hora <em>fumaste?</em></div>
+          <div class="input-wrap">
+            <input type="time" id="input-time" />
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="goStep3()">Continuar →</button>
+      </div>
+
+      <!-- Step 3: ¿Qué hacías? -->
+      <div id="step-doing" class="hidden fade-in">
+        <div class="step-indicator">
+          <div class="step-dot done"></div>
+          <div class="step-dot done"></div>
+          <div class="step-dot active"></div>
+          <div class="step-dot"></div>
+          <span class="step-label">3 / 4</span>
+        </div>
+        <div class="question">
+          <div class="question-label">¿Qué estabas <em>haciendo?</em></div>
+          <div class="input-wrap">
+            <textarea id="input-doing" placeholder="Describe la actividad..."></textarea>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="goStep4()">Continuar →</button>
+      </div>
+
+      <!-- Step 4: ¿Qué pensabas? -->
+      <div id="step-thinking" class="hidden fade-in">
+        <div class="step-indicator">
+          <div class="step-dot done"></div>
+          <div class="step-dot done"></div>
+          <div class="step-dot done"></div>
+          <div class="step-dot active"></div>
+          <span class="step-label">4 / 4</span>
+        </div>
+        <div class="question">
+          <div class="question-label">¿Qué estabas <em>pensando?</em></div>
+          <div class="input-wrap">
+            <textarea id="input-thinking" placeholder="Describe tus pensamientos..."></textarea>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="saveEntry()">Guardar registro ✓</button>
+      </div>
+
+      <!-- Step 5: Gracias -->
+      <div id="step-thanks" class="hidden fade-in">
+        <div class="thanks-screen">
+          <span class="thanks-icon">🙏</span>
+          <div class="thanks-title">¡Gracias!</div>
+          <div class="thanks-sub">
+            Tu registro fue guardado.<br>
+          </div>
+          <div class="thanks-summary" id="thanks-summary"></div>
+          <button class="btn btn-primary" onclick="addAnother()">+ Añadir otra entrada</button>
+          <button class="btn" style="margin-top:0.75rem" onclick="changeName()">Cambiar usuario</button>
+        </div>
+      </div>
+
+    </div><!-- /card -->
+
+    <!-- Historial -->
+    <div class="card" style="margin-top:1rem">
+      <button class="history-toggle" onclick="toggleHistory()">
+        <span id="history-toggle-icon">▾</span> Ver historial
+      </button>
+      <div class="history-panel" id="history-panel">
+        <div id="history-content"></div>
+      </div>
+    </div>
+
+    <div class="footer">datos sincronizados con la nube · privado y seguro</div>
+  </div>
+
+  <script>
+    // ─── Supabase Config ─────────────────────────────
+    const SUPABASE_URL = 'https://eqzvirqbhqbencyvuvlx.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxenZpcnFiaHFiZW5jeXZ1dmx4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMDI3NzksImV4cCI6MjA5MTg3ODc3OX0.WmGGMdUrijQBSmnC23rzfsNiYHjgu3tObyJ9U-WnnJE';
+
+    // Inicializar cliente de Supabase (compatible con CDN v2)
+    let sb;
+    try {
+      const mod = window.supabase;
+      sb = mod.createClient
+        ? mod.createClient(SUPABASE_URL, SUPABASE_KEY)
+        : mod.default
+          ? mod.default.createClient(SUPABASE_URL, SUPABASE_KEY)
+          : null;
+      if (sb) console.log('✅ Supabase conectado');
+      else console.error('❌ No se pudo inicializar Supabase');
+    } catch (err) {
+      console.error('❌ Error al inicializar Supabase:', err);
+      sb = null;
+    }
+
+    let currentUser = null;  // { name, id (uuid from DB) }
+    let currentEntry = {};
+
+    // ─── Supabase helpers ─────────────────────────────
+    async function findOrCreateUser(name) {
+      const nombreNorm = name.trim();
+
+      // Buscar usuario existente (case-insensitive)
+      const { data: existing } = await sb
+        .from('usuarios')
+        .select('id, nombre')
+        .ilike('nombre', nombreNorm)
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        return { id: existing[0].id, name: existing[0].nombre };
+      }
+
+      // Crear nuevo usuario
+      const { data: created, error } = await sb
+        .from('usuarios')
+        .insert({ nombre: nombreNorm })
+        .select('id, nombre')
+        .single();
+
+      if (error) {
+        console.error('Error creando usuario:', error);
+        alert('Error al conectar con la base de datos. Revisa tu conexión.');
+        return null;
+      }
+
+      return { id: created.id, name: created.nombre };
+    }
+
+    async function saveEntryToDB(userId, entry) {
+      const { error } = await sb
+        .from('registros')
+        .insert({
+          usuario_id: userId,
+          hora_fumado: entry.time,
+          actividad: entry.doing,
+          pensamiento: entry.thinking,
+          fecha_registro: new Date().toISOString().split('T')[0]
+        });
+
+      if (error) {
+        console.error('Error guardando registro:', error);
+        alert('Error al guardar el registro. Intenta de nuevo.');
+        return false;
+      }
+      return true;
+    }
+
+    async function loadAllHistory() {
+      // Traer usuarios con sus registros, ordenados por fecha
+      const { data: usuarios, error: errU } = await sb
+        .from('usuarios')
+        .select('id, nombre');
+
+      if (errU || !usuarios) return [];
+
+      const result = [];
+      for (const user of usuarios) {
+        const { data: registros } = await sb
+          .from('registros')
+          .select('*')
+          .eq('usuario_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (registros && registros.length > 0) {
+          result.push({
+            name: user.nombre,
+            entries: registros.map(r => ({
+              time: r.hora_fumado?.substring(0, 5) || '',
+              doing: r.actividad,
+              thinking: r.pensamiento,
+              date: r.fecha_registro
+                ? new Date(r.fecha_registro + 'T00:00:00').toLocaleDateString('es-MX', {
+                    day: '2-digit', month: 'long', year: 'numeric'
+                  })
+                : ''
+            }))
+          });
+        }
+      }
+      return result;
+    }
+
+    // ─── Navigation ───────────────────────────────────
+    function show(stepId) {
+      const steps = ['step-name', 'step-time', 'step-doing', 'step-thinking', 'step-thanks'];
+      steps.forEach(id => {
+        const el = document.getElementById(id);
+        el.classList.add('hidden');
+        el.classList.remove('fade-in');
+      });
+      const target = document.getElementById(stepId);
+      target.classList.remove('hidden');
+      void target.offsetWidth; // reflow
+      target.classList.add('fade-in');
+    }
+
+    async function goStep2() {
+      const name = document.getElementById('input-name').value.trim();
+      if (!name) { shake('input-name'); return; }
+
+      // Buscar o crear usuario en Supabase
+      const user = await findOrCreateUser(name);
+      if (!user) return;
+
+      currentUser = user;
+      currentEntry = {};
+      show('step-time');
+
+      // Set current time as default
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('input-time').value = `${hh}:${mm}`;
+    }
+
+    function goStep3() {
+      const time = document.getElementById('input-time').value;
+      if (!time) { shake('input-time'); return; }
+      currentEntry.time = time;
+      show('step-doing');
+    }
+
+    function goStep4() {
+      const doing = document.getElementById('input-doing').value.trim();
+      if (!doing) { shake('input-doing'); return; }
+      currentEntry.doing = doing;
+      show('step-thinking');
+    }
+
+    async function saveEntry() {
+      const thinking = document.getElementById('input-thinking').value.trim();
+      if (!thinking) { shake('input-thinking'); return; }
+      currentEntry.thinking = thinking;
+      currentEntry.date = new Date().toLocaleDateString('es-MX', {
+        day: '2-digit', month: 'long', year: 'numeric'
+      });
+
+      // Guardar en Supabase
+      const success = await saveEntryToDB(currentUser.id, currentEntry);
+      if (!success) return;
+
+      // Show summary
+      document.getElementById('thanks-summary').innerHTML = `
+      <div class="summary-row"><span class="summary-key">usuario</span><span class="summary-val">${currentUser.name}</span></div>
+      <div class="summary-row"><span class="summary-key">hora</span><span class="summary-val">${currentEntry.time} · ${currentEntry.date}</span></div>
+      <div class="summary-row"><span class="summary-key">haciendo</span><span class="summary-val">${currentEntry.doing}</span></div>
+      <div class="summary-row"><span class="summary-key">pensando</span><span class="summary-val">${currentEntry.thinking}</span></div>
+    `;
+
+      show('step-thanks');
+      renderHistory();
+    }
+
+    function addAnother() {
+      // Keep same user, reset entry fields
+      document.getElementById('input-doing').value = '';
+      document.getElementById('input-thinking').value = '';
+      currentEntry = {};
+      show('step-time');
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('input-time').value = `${hh}:${mm}`;
+    }
+
+    function changeName() {
+      currentUser = null;
+      document.getElementById('input-name').value = '';
+      document.getElementById('input-doing').value = '';
+      document.getElementById('input-thinking').value = '';
+      currentEntry = {};
+      show('step-name');
+    }
+
+    // ─── History ──────────────────────────────────────
+    function toggleHistory() {
+      const panel = document.getElementById('history-panel');
+      const icon = document.getElementById('history-toggle-icon');
+      panel.classList.toggle('open');
+      icon.textContent = panel.classList.contains('open') ? '▴' : '▾';
+      if (panel.classList.contains('open')) renderHistory();
+    }
+
+    async function renderHistory() {
+      const container = document.getElementById('history-content');
+      container.innerHTML = '<div class="no-history">Cargando registros...</div>';
+
+      const users = await loadAllHistory();
+
+      if (users.length === 0) {
+        container.innerHTML = '<div class="no-history">Aún no hay registros guardados.</div>';
+        return;
+      }
+
+      container.innerHTML = users.map(user => `
+      <div class="history-user">
+        <div class="history-user-name">${user.name}
+          <span style="color:var(--text-faint);font-size:0.65rem;font-family:'DM Mono',monospace">
+            · ${user.entries.length} entrada${user.entries.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+        ${user.entries.map(e => `
+          <div class="history-entry">
+            <div class="history-time">${e.time} · ${e.date || ''}</div>
+            <div class="history-text">
+              <strong style="color:var(--text-faint);font-size:0.65rem">haciendo:</strong> ${e.doing}<br>
+              <strong style="color:var(--text-faint);font-size:0.65rem">pensando:</strong> ${e.thinking}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `).join('');
+    }
+
+    // ─── Shake animation on empty fields ─────────────
+    function shake(inputId) {
+      const el = document.getElementById(inputId);
+      el.style.borderColor = '#a0522d';
+      el.style.animation = 'none';
+      el.style.transform = 'translateX(-4px)';
+      setTimeout(() => {
+        el.style.transform = 'translateX(4px)';
+        setTimeout(() => {
+          el.style.transform = 'translateX(0)';
+          el.style.transition = 'transform 0.1s';
+          el.style.borderColor = '';
+        }, 80);
+      }, 80);
+      el.focus();
+    }
+
+    // ─── Enter key navigation ─────────────────────────
+    document.getElementById('input-name').addEventListener('keydown', e => {
+      if (e.key === 'Enter') goStep2();
+    });
+
+    // ─── Init ─────────────────────────────────────────
+    renderHistory();
+  </script>
+</body>
+
+</html>
