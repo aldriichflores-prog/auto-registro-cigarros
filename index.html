@@ -436,7 +436,6 @@
 
   <div class="container">
     <div class="header">
-      <div class="header-eyebrow">Diario de consumo</div>
       <h1 class="header-title">Registro<br><em>de cigarros</em></h1>
       <div class="header-line"></div>
     </div>
@@ -525,21 +524,12 @@
           </div>
           <div class="thanks-summary" id="thanks-summary"></div>
           <button class="btn btn-primary" onclick="addAnother()">+ Añadir otra entrada</button>
-          <button class="btn" style="margin-top:0.75rem" onclick="changeName()">Cambiar usuario</button>
         </div>
       </div>
 
     </div><!-- /card -->
 
-    <!-- Historial -->
-    <div class="card" style="margin-top:1rem">
-      <button class="history-toggle" onclick="toggleHistory()">
-        <span id="history-toggle-icon">▾</span> Ver historial
-      </button>
-      <div class="history-panel" id="history-panel">
-        <div id="history-content"></div>
-      </div>
-    </div>
+    <!-- Historial removido para privacidad -->
 
     <div class="footer">datos sincronizados con la nube · privado y seguro</div>
   </div>
@@ -721,7 +711,6 @@
     `;
 
       show('step-thanks');
-      renderHistory();
     }
 
     function addAnother() {
